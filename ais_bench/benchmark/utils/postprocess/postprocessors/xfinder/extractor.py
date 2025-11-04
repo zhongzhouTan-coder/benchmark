@@ -5,7 +5,10 @@ from logging import getLogger
 import requests
 from openai import OpenAI
 
-from .xfinder_utils import PROMPT_TEMPLATE
+from ais_bench.benchmark.utils.logging import AISLogger
+from ais_bench.benchmark.utils.logging.exceptions import AISRuntimeError
+from ais_bench.benchmark.utils.logging.error_codes import UTILS_CODES
+from .xfinder_utils.PROMPT_TEMPLATE import PROMPT_TEMPLATE
 
 Instruction = """I will provide you with a question, output sentences along with an answer range. The output sentences are the response of the question provided. The answer range could either describe the type of answer expected or list all possible valid answers. Using the information provided, you must accurately and precisely determine and extract the intended key answer from the output sentences. Please don't have your subjective thoughts about the question.
 First, you need to determine whether the content of the output sentences is relevant to the given question. If the entire output sentences are unrelated to the question (meaning the output sentences are not addressing the question), then output [No valid answer].
@@ -15,6 +18,9 @@ Below are some special cases you need to be aware of:
     (2) If the answer range is a list and the key answer in the output sentences is not explicitly listed among the candidate options in the answer range, also output [No valid answer].
 
 """ # noqa
+
+
+logger = AISLogger()
 
 
 class Extractor:
@@ -39,6 +45,12 @@ class Extractor:
         self.max_tokens = max_tokens
         self.mode = 'API' if self.url is not None else 'Local'
         self.logger = getLogger(__name__)
+        self.client = None
+        self.retry = 0
+        logger.debug(
+            f"Extractor.init: model_name={model_name}, url={'<list>' if isinstance(url, list) else url}, "
+            f"temperature={temperature}, max_tokens={max_tokens}, mode={self.mode}"
+        )
 
         if self.mode == 'Local':
             from vllm import LLM, SamplingParams
@@ -92,7 +104,7 @@ class Extractor:
             ],
         })
         headers = {'Content-Type': 'application/json'}
-        res = requests.request('POST', self.url, headers=headers, data=payload)
+        res = requests.request('POST', self.url, headers=headers, data=payload, timeout=120)
         res = res.json()['text'][0]
         res = res.replace(prompt, '')
         # res = requests.post(self.url, json=payload)
@@ -112,11 +124,17 @@ class Extractor:
         if isinstance(self.url, list):
             # Randomly api for better load balancing
             import random
-            self.url = random.choice(self.url)
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url=self.url,
-        )
+            chosen_url = random.choice(self.url)
+            logger.debug(f"openai_infer: selected url={chosen_url}")
+        else:
+            chosen_url = self.url
+        try:
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=chosen_url,
+            )
+        except Exception as e:
+            raise AISRuntimeError(UTILS_CODES.UNKNOWN_ERROR, f"Failed to initialize OpenAI client: {type(e).__name__}: {str(e)}") from e
         self.retry = retry
 
         t = time.perf_counter()
@@ -147,16 +165,18 @@ class Extractor:
                 js_response = json.loads(chat_response.model_dump_json())
                 response = js_response['choices'][0]['message']['content']
                 break
-            except Exception as e:
-                self.logger.info(f'Error: {e}')
-                self.logger.info(f'{self.url} is down. Retrying...')
-                self.logger.info(f'Time elapsed: {time.perf_counter() - t} seconds')
+            except (ConnectionError, TimeoutError, OSError, RuntimeError, KeyError, IndexError, json.JSONDecodeError) as e:
+                if isinstance(e, (KeyError, IndexError, json.JSONDecodeError)):
+                    raise AISRuntimeError(UTILS_CODES.API_RESPONSE_PARSE_FAILED, f"Failed to parse API response: {e}") from e
+                logger.warning(
+                    f'Inference error at url={chosen_url}: {type(e).__name__}: {e}. retries_left={retry-1}'
+                )
+                logger.info(f'Time elapsed: {time.perf_counter() - t} seconds')
                 time.sleep(6)
                 retry -= 1
         if retry == 0:
-            response = 'Error: Failed to get response.'
-            self.logger.info(f'{response} after {self.retry} tries.')
-            raise ValueError('The api is down')
+            elapsed = time.perf_counter() - t
+            raise AISRuntimeError(UTILS_CODES.API_RETRY_EXCEEDED, f'Failed to get response after retries {elapsed:.2f}s')
         return response.strip()
 
     def offline_infer(self, query: str) -> str:

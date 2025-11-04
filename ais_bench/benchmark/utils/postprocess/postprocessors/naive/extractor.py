@@ -1,9 +1,17 @@
-# Naive model extractor for AISBench, modified from xFinder: https://github.com/IAAR-Shanghai/xFinder # noqa
+"""Naive model extractor for AISBench (modified from xFinder).
+Ref: https://github.com/IAAR-Shanghai/xFinder
+"""
 import json
 import time
-from logging import getLogger
+import random
 
 from openai import OpenAI
+from ais_bench.benchmark.utils.logging import AISLogger
+from ais_bench.benchmark.utils.logging.exceptions import (
+    AISRuntimeError,
+    ParameterValueError,
+)
+from ais_bench.benchmark.utils.logging.error_codes import UTILS_CODES
 
 Meta_Instruction = """I will provide you with a question, output sentences along with an answer range. The output sentences are the response of the question provided. The answer range could either describe the type of answer expected or list all possible valid answers. Using the information provided, you must accurately and precisely determine and extract the intended key answer from the output sentences. Please don't have your subjective thoughts about the question.
 First, you need to determine whether the content of the output sentences is relevant to the given question. If the entire output sentences are unrelated to the question (meaning the output sentences are not addressing the question), then output [No valid answer].
@@ -32,6 +40,9 @@ def format_input_naive(data):
     return format_data
 
 
+logger = AISLogger()
+
+
 class NaiveExtractor:
 
     def __init__(
@@ -52,7 +63,13 @@ class NaiveExtractor:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.custom_instruction = custom_instruction
-        self.logger = getLogger(__name__)
+        # Basic initialization logs for traceability
+        self.client = None
+        self.retry = 0
+        logger.debug(
+            f"NaiveExtractor.init: model_name={model_name}, url={'<list>' if isinstance(url, list) else url}, "
+            f"temperature={temperature}, max_tokens={max_tokens}"
+        )
 
     def prepare_input(self, item):
         user_input = Meta_Instruction + self.custom_instruction + \
@@ -74,14 +91,24 @@ class NaiveExtractor:
         Returns:
             str: The extracted answer (xFinder's output).
         """
-        if isinstance(self.url, list):
-            # Randomly api for better load balancing
-            import random
-            self.url = random.choice(self.url)
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url=self.url,
-        )
+        if self.url is None:
+            raise ParameterValueError(UTILS_CODES.MISSING_API_URL, "api url is required for inference")  # type: ignore[attr-defined]
+
+        # Randomly select one url from list for load balancing
+        chosen_url = random.choice(self.url) if isinstance(self.url, list) else self.url
+        logger.debug(f"openai_infer: selected url={chosen_url}")
+
+        try:
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=chosen_url,
+            )
+        except Exception as e:
+            raise AISRuntimeError(
+                UTILS_CODES.DEPENDENCY_MODULE_IMPORT_ERROR,
+                f"Failed to initialize OpenAI client: {type(e).__name__}: {str(e)}",
+            ) from e
+
         self.retry = retry
 
         t = time.perf_counter()
@@ -105,17 +132,27 @@ class NaiveExtractor:
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                 )
-                js_response = json.loads(chat_response.model_dump_json())
-                response = js_response['choices'][0]['message']['content']
+                try:
+                    js_response = json.loads(chat_response.model_dump_json())
+                    response = js_response['choices'][0]['message']['content']
+                except (json.JSONDecodeError, KeyError, TypeError) as parse_err:
+                    raise AISRuntimeError(
+                        UTILS_CODES.API_RESPONSE_PARSE_FAILED,
+                        f"Failed to parse response JSON: {type(parse_err).__name__}: {str(parse_err)}",
+                    ) from parse_err
                 break
-            except Exception as e:
-                self.logger.info(f'Error: {e}')
-                self.logger.info(f'{self.url} is down. Retrying...')
-                self.logger.info(f'Time elapsed: {time.perf_counter() - t} seconds')
+            except (ConnectionError, TimeoutError, OSError, RuntimeError) as e:
+                logger.warning(
+                    f"Inference error at url={chosen_url}: {type(e).__name__}: {e}. "
+                    f"retries_left={retry-1}"
+                )
+                logger.info(f'Time elapsed: {time.perf_counter() - t} seconds')
                 time.sleep(6)
                 retry -= 1
         if retry == 0:
-            response = 'Error: Failed to get response.'
-            self.logger.info(f'{response} after {self.retry} tries.')
-            raise ValueError('The api is down')
+            elapsed = time.perf_counter() - t
+            raise AISRuntimeError(
+                UTILS_CODES.API_RETRY_EXCEEDED,
+                f"API down or unresponsive after {self.retry} retries at {chosen_url} (elapsed {elapsed:.2f}s)"
+            )
         return response.strip()
