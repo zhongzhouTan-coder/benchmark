@@ -79,10 +79,10 @@ class ErrorCodeManager:
     def __init__(self):
         self._error_codes: Dict[str, BaseErrorCode] = {}
 
-    def register(self, error_code: BaseErrorCode) -> None:
-        if error_code.full_code in self._error_codes:
-            raise ValueError(f"error code {error_code.full_code} is exist!")
-        self._error_codes[error_code.full_code] = error_code
+    def register(self, ec: BaseErrorCode) -> None:
+        if ec.full_code in self._error_codes:
+            raise ValueError(f"error code {ec.full_code} is exist!")
+        self._error_codes[ec.full_code] = ec
 
     def get(self, full_code: str) -> Optional[BaseErrorCode]:
         return self._error_codes.get(full_code)
@@ -245,6 +245,9 @@ class UTILS_CODES:
     UNSUPPORTED_DISTRIBUTION_METHOD = BaseErrorCode("UTILS-PARAM-007", ErrorModule.UTILS, ErrorType.PARAM, 7, "unsupported distribution method")
     ILLEGAL_KEYS_IN_CONFIG = BaseErrorCode("UTILS-PARAM-008", ErrorModule.UTILS, ErrorType.PARAM, 8, "illegal keys in configuration")
 
+    # Parameter errors (additional)
+    MISSING_API_URL = BaseErrorCode("UTILS-PARAM-009",ErrorModule.UTILS,ErrorType.PARAM,9,"api_url is required")
+
     # Config validation errors
     MODEL_CONFIG_VALIDATE_FAILED = BaseErrorCode("UTILS-CFG-001", ErrorModule.UTILS, ErrorType.CONFIG, 1, "model config validate failed")
     SYNTHETIC_DS_MISS_REQUIRED_PARAM = BaseErrorCode("UTILS-CFG-002", ErrorModule.UTILS, ErrorType.CONFIG, 2, "synthetic dataset miss required param")
@@ -255,6 +258,12 @@ class UTILS_CODES:
     INCOMPATIBLE_MERGE_DS = BaseErrorCode("UTILS-CFG-007", ErrorModule.UTILS, ErrorType.CONFIG, 7, "incompatible --merge-ds option for function call task")
     SYNTHETIC_DS_MISS_REQUIRED_PARAM = BaseErrorCode("UTILS-CFG-001", ErrorModule.UTILS, ErrorType.CONFIG, 1, "synthetic dataset miss required param")
     MM_CUSTOM_DATASET_WRONG_FORMAT = BaseErrorCode("UTILS-CFG-008", ErrorModule.UTILS, ErrorType.CONFIG, 8, "invalid mm custom dataset")
+
+    # Dependency/runtime errors (additional)
+    API_RETRY_EXCEEDED = BaseErrorCode("UTILS-DEPENDENCY-002",ErrorModule.UTILS,ErrorType.DEPENDENCY,2,"API retries exhausted")
+
+    # Data/response errors (additional)
+    API_RESPONSE_PARSE_FAILED = BaseErrorCode("UTILS-DATA-001",ErrorModule.UTILS,ErrorType.DATA,1,"failed to parse response data")
 
 class CALC_CODES:
     UNKNOWN_ERROR = BaseErrorCode("CALC-UNK-001", ErrorModule.CALCULATOR, ErrorType.UNKNOWN, 1, "unknown error of calculator")
