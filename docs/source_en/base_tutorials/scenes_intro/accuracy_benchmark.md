@@ -110,11 +110,32 @@ At the same time, the final generated directory structure is as follows:
 
 ### Multi-Task Parallel Evaluation
 By default, multiple subtasks are executed serially. Continuous Batch is enabled by default within a single task, and multiple processes will be launched to send and process requests according to the maximum concurrency configured by the user, allowing for large concurrency settings. When the concurrency of a single task is low, multi-task parallelism can be achieved by setting the 📚 [`--max-num-workers`](../all_params/cli_args.md#accuracy-evaluation-parameters) parameter. Example as follows:
-
 ```bash
-ais_bench --models vllm_api_general vllm_api_stream_chat --datasets gsm8k_gen math500_gen_0_shot_cot_chat_prompt  --max-num-workers 4
+ais_bench --models vllm_api_general_chat vllm_api_stream_chat --datasets gsm8k_gen_4_shot_cot_str aime2024_gen_0_shot_chat_prompt --max-num-workers 4
 ```
-In the example, the maximum number of concurrent tasks is set to 4, and the four subtasks will be executed simultaneously. The generated results are consistent with the example in [Multi-Task Evaluation](#multi-task-evaluation).
+
+In the example above, the maximum number of concurrent tasks is set to 4, so four subtasks will be executed simultaneously. This can be viewed on the command line dashboard:
+
+```
+Base path of result&log : outputs/default/20251106_113926
+Task Progress Table (Updated at: 2025-11-06 11:39:58)
+Page: 1/1  Total 5 rows of data
+Press Up/Down arrow to page,  'P' to PAUSE/RESUME screen refresh, 'Ctrl + C' to exit
+
++--------------------------------+-----------+----------------------------------------------------+-------------+-------------+-----------------------------------------------+---------------------------------------------------+
+| Task Name                      |   Process | Progress                                           | Time Cost   | Status      | Log Path                                      | Extend Parameters                                 |
++================================+===========+====================================================+=============+=============+===============================================+===================================================+
+| vllm-api-general-chat/gsm8k    |   1250142 | [                              ] 5/1319 [5.0 it/s] | 0:00:07     | inferencing | logs/infer/vllm-api-general-chat/gsm8k.out    | {'POST': 10, 'RECV': 5, 'FINISH': 5, 'FAIL': 0}   |
++--------------------------------+-----------+----------------------------------------------------+-------------+-------------+-----------------------------------------------+---------------------------------------------------+
+| vllm-api-general-chat/aime2024 |   1250139 | [#####                         ] 5/30 [5.0 it/s]   | 0:00:07     | inferencing | logs/infer/vllm-api-general-chat/aime2024.out | {'POST': 10, 'RECV': 5, 'FINISH': 5, 'FAIL': 0}   |
++--------------------------------+-----------+----------------------------------------------------+-------------+-------------+-----------------------------------------------+---------------------------------------------------+
+| vllm-api-stream-chat/gsm8k     |   1250143 | [                              ] 5/1319 [5.0 it/s] | 0:00:07     | inferencing | logs/infer/vllm-api-stream-chat/gsm8k.out     | {'POST': 10, 'RECV': 5, 'FINISH': 5, 'FAIL': 0}   |
++--------------------------------+-----------+----------------------------------------------------+-------------+-------------+-----------------------------------------------+---------------------------------------------------+
+| vllm-api-stream-chat/aime2024  |   1250138 | [###############               ] 15/30 [5.0 it/s]  | 0:00:07     | inferencing | logs/infer/vllm-api-stream-chat/aime2024.out  | {'POST': 20, 'RECV': 15, 'FINISH': 15, 'FAIL': 0} |
++--------------------------------+-----------+----------------------------------------------------+-------------+-------------+-----------------------------------------------+---------------------------------------------------+
+```
+
+The generated result is consistent with the example in [Multi-Task Evaluation](#multi-task-evaluation).
 
 ### Resumption After Interruption & Retesting of Failed Cases
 If the inference task fails due to an unexpected interruption or server exception during the evaluation, the breakpoint management function can be enabled via `--reuse` to resume the task. It also supports automatic retesting of only failed cases without re-running all tasks. Example as follows:

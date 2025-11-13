@@ -73,18 +73,13 @@ models = [
     )
 ]
 ```
+
 ## 执行命令
-修改好配置文件后，执行命令启动服务化精度评测（⚠️ 第一次执行建议加上`--debug`，可以将具体日志打屏，如果有请求推理服务过程中的报错更方便处理）：
-```bash
-# 命令行加上--debug，
-ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt --debug
-```
-### 执行命令
 修改好配置文件后，执行命令启动服务化精度评测：
 ```bash
 ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt
 ```
-#### 查看任务执行细节
+## 查看任务执行细节
 执行AISBench命令后，正在执行的任务状态会在命令行实时刷新的看板上显示（键盘按"P"键可以停止刷新，用于复制看板信息，再按"P"可以继续刷新），例如：
 ```
 Base path of result&log : outputs/default/20250628_151326
