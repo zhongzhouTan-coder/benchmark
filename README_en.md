@@ -133,21 +133,15 @@ Detailed information (introduction, usage constraints, etc.) about the selected 
 - `--summarizer`: 📚 [Result Summary Tasks](https://ais-bench-benchmark-rf.readthedocs.io/en/latest/base_tutorials/all_params/summarizer.html)
 
 
-### Preparations Before Running the Command
-- `--models`: To use the `vllm_api_general_chat` model task, prepare an inference service that supports the `v1/chat/completions` sub-service. Refer to 🔗 [Start an OpenAI-Compatible Server with VLLM](https://docs.vllm.com.cn/en/latest/getting_started/quickstart.html#openai-compatible-server) to launch the inference service.
-- `--datasets`: To use the `demo_gsm8k_gen_4_shot_cot_chat_prompt` dataset task, prepare the GSM8K dataset. Download it from 🔗 [GSM8K Dataset Compressed Package Provided by OpenCompass](http://opencompass.oss-cn-shanghai.aliyuncs.com/datasets/data/gsm8k.zip). Deploy the unzipped `gsm8k/` folder to the `ais_bench/datasets` folder under the root path of the AISBench evaluation tool.
-
-
-### Modify Configuration Files for Corresponding Tasks
-Each model task, dataset task, and result presentation task corresponds to a configuration file. These files need to be modified before running the command. The paths of these configuration files can be queried by adding `--search` to the original AISBench command. For example:
+# Modification of Configuration Files Corresponding to Tasks
+Each model task, dataset task, and result presentation task corresponds to a configuration file. The content of these configuration files needs to be modified before running the command. The paths of these configuration files can be queried by adding `--search` to the original AISBench command. For example:
 ```shell
 ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt --search
 ```
-> ⚠️ **Note**: Executing the command with the `--search` option will print the absolute paths of the configuration files corresponding to the tasks.
+> ⚠️ **Note**: Executing the command with the `search` option will print the absolute path of the configuration file corresponding to the task.
 
-Executing the query command will yield results similar to the following:
+After executing the query command, you will get the following query results:
 ```shell
-06/28 11:52:25 - AISBench - INFO - Searching configs...
 ╒══════════════╤═══════════════════════════════════════╤════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╕
 │ Task Type    │ Task Name                             │ Config File Path                                                                                                               │
 ╞══════════════╪═══════════════════════════════════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
@@ -155,11 +149,12 @@ Executing the query command will yield results similar to the following:
 ├──────────────┼───────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ --datasets   │ demo_gsm8k_gen_4_shot_cot_chat_prompt │ /your_workspace/benchmark/ais_bench/benchmark/configs/datasets/demo/demo_gsm8k_gen_4_shot_cot_chat_prompt.py                   │
 ╘══════════════╧═══════════════════════════════════════╧════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+
 ```
 
-- The dataset task configuration file `demo_gsm8k_gen_4_shot_cot_chat_prompt.py` in the quick start does not require additional modifications. For an introduction to the content of dataset task configuration files, refer to 📚 [Configure Open-Source Datasets](https://ais-bench-benchmark-rf.readthedocs.io/en/latest/base_tutorials/all_params/datasets.html#id6).
+- The dataset task configuration file `demo_gsm8k_gen_4_shot_cot_chat_prompt.py` in the quick start does not require additional modifications. For an introduction to the content of the dataset task configuration file, please refer to 📚 [Configure Open-Source Datasets](https://ais-bench-benchmark-rf.readthedocs.io/en/latest/base_tutorials/all_params/datasets.html#id6)
 
-The model configuration file `vllm_api_general_chat.py` contains configuration content related to model operation and needs to be modified according to actual conditions. Modifications required for the quick start are marked with comments:
+The model configuration file `vllm_api_general_chat.py` contains configuration content related to model operation and needs to be modified according to actual conditions. The content that needs to be modified in the quick start is marked with comments.
 ```python
 from ais_bench.benchmark.models import VLLMCustomAPIChat
 
@@ -168,51 +163,65 @@ models = [
         attr="service",
         type=VLLMCustomAPIChat,
         abbr='vllm-api-general-chat',
-        path="",                    # Specify the absolute path of the model serialized vocabulary file (configuration is generally not required for accuracy testing scenarios).
-        model="DeepSeek-R1",        # Specify the name of the model loaded on the server, configured according to the actual model name pulled by the VLLM inference service (configure as an empty string to get it automatically)
-        request_rate = 0,           # Request sending frequency: send 1 request to the server every 1/request_rate seconds; if less than 0.1, all requests are sent at once
-        retry = 2,                  # Maximum number of retries per request
-        host_ip = "localhost",      # Specify the IP of the inference service
-        host_port = 8080,           # Specify the port of the inference service
-        max_out_len = 512,          # Maximum number of tokens output by the inference service
+        path="",                    # Specify the absolute path of the model serialized vocabulary file (generally not required for accuracy testing scenarios)
+        model="",        # Specify the name of the model loaded on the server, configured according to the actual model name pulled by the VLLM inference service (configure as an empty string to get it automatically)
+        stream=False,
+        request_rate=0,           # Request sending frequency: send 1 request to the server every 1/request_rate seconds; if less than 0.1, all requests are sent at once
+        retry=2,                  # Maximum number of retries for each request
+        headers={"Content-Type": "application/json"}, # Custom request headers, default is {"Content-Type": "application/json"}
+        host_ip="localhost",      # Specify the IP of the inference service
+        host_port=8080,           # Specify the port of the inference service
+        url="",                     # Custom URL path for accessing the inference service (needs to be configured when the base URL is not a combination of http://host_ip:host_port; after configuration, host_ip and host_port will be ignored)
+        max_out_len=512,          # Maximum number of tokens output by the inference service
         batch_size=1,               # Maximum concurrency for sending requests
-        generation_kwargs = dict(   # Model inference parameters shall be configured with reference to the VLLM documentation. The AISBench evaluation tool does not process these parameters, which will be included in the sent request.
-            temperature = 0.5,
-            top_k = 10,
-            top_p = 0.95,
-            seed = None,
-            repetition_penalty = 1.03,
+        trust_remote_code=False,    # Whether the tokenizer trusts remote code, default is False;
+        generation_kwargs=dict(   # Model inference parameters, configured with reference to the VLLM documentation; the AISBench evaluation tool does not process them and attaches them to the sent request
+            temperature=0.01,
+            ignore_eos=False,
         )
     )
 ]
 ```
-
-
-### Execute the Command
-After modifying the configuration files, run the command to start the service-based accuracy evaluation (⚠️ For the first execution, it is recommended to add `--debug` to print detailed logs to the screen, which makes it easier to troubleshoot errors that occur when requesting the inference service):
+# Execution Command
+After modifying the configuration files, execute the command to start the service-based accuracy evaluation:
 ```bash
-# Add --debug to the command line
-ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt --debug
+ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt
+```
+## View Task Execution Details
+After executing the AISBench command, the status of the ongoing task will be displayed on a real-time refreshed dashboard in the command line (press the "P" key on the keyboard to stop refreshing for copying dashboard information, and press "P" again to resume refreshing). For example:
+```
+Base path of result&log : outputs/default/20250628_151326
+Task Progress Table (Updated at: 2025-11-06 10:08:21)
+Page: 1/1  Total 2 rows of data
+Press Up/Down arrow to page,  'P' to PAUZE/RESUME screen refresh, 'Ctrl + C' to exit
+
++----------------------------------+-----------+-------------------------------------------------+-------------+-------------+-------------------------------------------------+------------------------------------------------+
+| Task Name                        |   Process | Progress                                        | Time Cost   | Status      | Log Path                                        | Extend Parameters                              |
++==================================+===========+=================================================+=============+=============+=================================================+================================================+
+| vllm-api-general-chat/demo_gsm8k |    547141 | [###############               ] 4/8 [0.5 it/s] | 0:00:11     | inferencing | logs/infer/vllm-api-general-chat/demo_gsm8k.out | {'POST': 5, 'RECV': 4, 'FINISH': 4, 'FAIL': 0} |
++----------------------------------+-----------+-------------------------------------------------+-------------+-------------+-------------------------------------------------+------------------------------------------------+
+
 ```
 
-
-#### View Task Execution Details
-After running the AISBench command, details of the task execution will be continuously saved to the default output path. This output path is indicated in the logs printed to the screen during execution. For example:
+The detailed logs of task execution will be continuously saved to the default output path, which is displayed on the real-time refreshed dashboard as `Log Path`. The `Log Path` (`logs/infer/vllm-api-general-chat/demo_gsm8k.out`) is under the `Base path` (`outputs/default/20250628_151326`). Taking the above dashboard information as an example, the path of the detailed log of task execution is:
 ```shell
-06/28 15:13:26 - AISBench - INFO - Current exp folder: outputs/default/20250628_151326
+# {Base path}/{Log Path}
+outputs/default/20250628_151326/logs/infer/vllm-api-general-chat/demo_gsm8k.out
 ```
 
-This log indicates that the task execution details are saved in `outputs/default/20250628_151326` (under the directory where the command was executed).
-After the command completes, the task execution details in `outputs/default/20250628_151326` are structured as follows:
+> 💡 If you want the detailed logs to be printed directly during execution, you can add `--debug` to the execution command:
+`ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt --debug`
 
+
+The `Base path` (`outputs/default/20250628_151326`) contains all the task execution details. After the command execution is completed, all execution details are as follows:
 ```shell
 20250628_151326/
-├── configs # Combined configuration file for model tasks, dataset tasks, and result presentation tasks
+├── configs # A combined configuration of the configuration files corresponding to model tasks, dataset tasks, and structure presentation tasks
 │   └── 20250628_151326_29317.py
-├── logs # Execution logs; if --debug is added to the command, no intermediate logs are saved to disk (all are printed directly to the screen)
+├── logs # Logs during execution; if --debug is added to the command, no process logs will be saved (all logs are printed directly)
 │   ├── eval
 │   │   └── vllm-api-general-chat
-│   │       └── demo_gsm8k.out # Logs of the accuracy evaluation process based on inference results in the predictions/ folder
+│   │       └── demo_gsm8k.out # Logs of the accuracy evaluation process based on the inference results in the predictions/ folder
 │   └── infer
 │       └── vllm-api-general-chat
 │           └── demo_gsm8k.out # Logs of the inference process
@@ -221,13 +230,13 @@ After the command completes, the task execution details in `outputs/default/2025
 │       └── demo_gsm8k.json # Inference results (all outputs returned by the inference service)
 ├── results
 │   └── vllm-api-general-chat
-│       └── demo_gsm8k.json # Raw scores calculated from the accuracy evaluation
+│       └── demo_gsm8k.json # Original scores calculated by accuracy evaluation
 └── summary
     ├── summary_20250628_151326.csv # Final accuracy scores (in table format)
     ├── summary_20250628_151326.md # Final accuracy scores (in Markdown format)
     └── summary_20250628_151326.txt # Final accuracy scores (in text format)
 ```
-> ⚠️ **Note**: The content of saved task execution details varies across different evaluation scenarios. For specifics, please refer to the guide for the respective evaluation scenario.
+> ⚠️ **Note**: The content of the saved task execution details varies in different evaluation scenarios. For details, please refer to the guide for the specific evaluation scenario.
 
 
 #### Output Results

@@ -17,43 +17,43 @@ Based on the execution scenario, command line parameters are divided into three 
 
 `Accuracy Evaluation Parameters` take effect only when the `--mode` parameter is specified as `"all", "infer", "eval", "viz"`. `Performance Evaluation Parameters` take effect only when the `--mode` parameter is specified as `"perf", "perf_viz"`. `Common Parameters` are not restricted by the task execution mode and can be specified in all modes.
 
-
-### Common Parameters
+# ### Common Parameters
 Applicable to all modes and can be used in combination with accuracy or performance parameters.
 
-| Parameter | Description | Example |
-| ---- | ---- | ---- |
+| Parameter               | Description                                                                                                                                                                                                 | Example                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | `--models` | Specifies the name of the model inference backend task (corresponding to a pre-implemented default model configuration file under the path `ais_bench/benchmark/configs/models`). Multiple task names are supported; this parameter is mutually exclusive with the `config` parameter. For details, refer to 📚 [Supported Models](./models.md) | `--models vllm_api_general`  |
 | `--datasets` | Specifies the name of the dataset task (corresponding to a pre-implemented default dataset configuration file under the path `ais_bench/benchmark/configs/datasets`). Multiple dataset names are supported; this parameter is mutually exclusive with the `config` parameter. For details, refer to 📚 [Supported Dataset Types](./datasets.md) | `--datasets gsm8k_gen`    |
 | `--summarizer` | Specifies the name of the result summary task (corresponding to a pre-implemented default configuration file under the path `ais_bench/benchmark/configs/summarizers`). For details, refer to 📚 [Supported Result Summary Tasks](./summarizer.md) | `--summarizer medium`|
 | `--mode` or `-m` | Running mode, optional values: `all`, `infer`, `eval`, `viz`, `perf`, `perf_viz`; default value is `all`.<br>For details, refer to 📚 [Running Mode Description](./mode.md). | `--mode infer`<br>`-m all`|
-| `--reuse` or `-r` | Specifies the timestamp in an existing working directory to continue execution and overwrite original results. Combined with the value of the `--mode` parameter, it can be used to resume interrupted inference, or perform accuracy calculation and visualization result printing based on existing inference results. If no parameter is added, the latest timestamp under `--work-dir` is automatically selected. | `--reuse 20250126_144254`<br>`-r 20250126_144254` |
-| `--work-dir` or `-w` | Specifies the evaluation working directory for saving output results. The default path is `outputs/default`. | `--work-dir /path/to/work`<br>`-w /path/to/work` |
-| `--config-dir` | The folder path where the configuration files for `models`, `datasets`, and `summarizers` are stored. The default path is `ais_bench/benchmark/configs`. | `--config-dir /xxx/xxx`   |
-| `--debug` | Enables Debug mode. This parameter is enabled if configured, and disabled if not configured; it is disabled by default. In Debug mode, all logs are printed directly to the terminal. | `--debug`   |
-| `--dry-run` | Enables Dry Run mode (only prints logs to the screen without actually running the task). This parameter is enabled if configured, and disabled if not configured; it is disabled by default. | `--dry-run` |
-| `--max-workers-per-gpu` | Reserved parameter, not supported temporarily. | `--max-workers-per-gpu 1` |
-| `--merge-ds` | Enables merged inference for datasets of the same type (running multiple datasets for the same task together). | `--merge-ds`|
+| `--reuse` or `-r`       | Specifies the timestamp in an existing working directory to continue execution and overwrite original results. Used in conjunction with the `--mode` parameter, it can resume interrupted inference, or perform accuracy calculation/visualization result printing based on existing inference results. If no parameter is added, the latest timestamp in the `--work-dir` is automatically selected. | `--reuse 20250126_144254`<br>`-r 20250126_144254` |
+| `--work-dir` or `-w`    | Specifies the evaluation working directory for saving output results. Default path: `outputs/default`.                                                                                                       | `--work-dir /path/to/work`<br>`-w /path/to/work` |
+| `--config-dir`          | Path to the folder where configuration files for `models`, `datasets`, and `summarizers` are stored. Default path: `ais_bench/benchmark/configs`.                                                          | `--config-dir /xxx/xxx`          |
+| `--debug`               | Enables Debug mode. The mode is enabled if this parameter is configured, and disabled if not; disabled by default. In Debug mode, all logs are printed directly to the terminal.                              | `--debug`                        |
+| `--dry-run`             | Enables Dry Run mode (prints logs to the screen without actually running tasks). The mode is enabled if this parameter is configured, and disabled if not; disabled by default.                              | `--dry-run`                      |
+| `--max-workers-per-gpu` | Reserved parameter; not currently supported.                                                                                                                                                               | `--max-workers-per-gpu 1`        |
+| `--merge-ds`            | Enables merged inference for datasets of the same type (runs multiple datasets for the same task together).                                                                                                 | `--merge-ds`                     |
+| `--num-prompts`         | Specifies the number of test cases for the dataset. A positive integer must be passed. If the number exceeds the total number of cases in the dataset or no value is specified, the entire dataset is used for testing. | `--num-prompts 500`              |
+| `--max-num-workers`     | Number of parallel tasks, range: `[1, number of CPU cores]`; default value: `1`. Invalid in Continuous Batch or performance mode.                                                                          | `--max-num-workers 2`            |
+| `--num-warmups`         | Number of warm-up runs before sending requests; default value: `1`; set to `0` to disable warm-up.                                                                                                          | `--num-warmups 10`               |
 
 
-### Accuracy Evaluation Parameters
-Effective only when the mode is `all`, `infer`, `eval`, or `viz`.
+# ### Accuracy Evaluation Parameters
+Valid only when the mode is `all`, `infer`, `eval`, or `viz`.
 
-| Parameter | Description | Example |
-| ---- | ---- | ---- |
-| `--max-num-workers` | Number of parallel tasks, range `[1, number of CPU cores]`, default value is `1`. Invalid in Continuous Batch or performance mode. | `--max-num-workers 2` |
-| `--dump-eval-details` | Switch to enable dumping details of the evaluation process. Enabled if this parameter is configured, disabled if not; disabled by default. | `--dump-eval-details` |
-| `--dump-extract-rate` | Switch to enable dumping evaluation speed data. Enabled if this parameter is configured, disabled if not; disabled by default. | `--dump-extract-rate` |
-| `--disable-cb` | Disables Continuous Batch inference (effective only for service-oriented API-type models). Disabled if this parameter is configured, enabled if not; enabled by default. When CB is enabled, multiple processes run concurrently, with a maximum concurrency limit of 500 per process.<br>After disabling, single-process mode is restored, and `--max-num-workers` takes effect. | `--disable-cb`  |
+| Parameter               | Description                                                                 | Example              |
+| ----------------------- | --------------------------------------------------------------------------- | -------------------- |
+| `--dump-eval-details`   | Toggle to dump details of the evaluation process. Enabled if configured, disabled if not; disabled by default. | `--dump-eval-details`|
+| `--dump-extract-rate`   | Toggle to dump evaluation speed data. Enabled if configured, disabled if not; disabled by default.             | `--dump-extract-rate`|
 
 
-### Performance Evaluation Parameters
-Effective only when the mode is `perf` or `perf_viz`.
+# ### Performance Evaluation Parameters
+Valid only when the mode is `perf` or `perf_viz`.
 
-| Parameter | Description | Example |
-| ---- | ---- | ---- |
-| `--num-prompts` | Specifies the number of data samples for dataset evaluation. A positive integer must be entered. If the value exceeds the total number of dataset samples or no value is specified, the entire dataset is used for evaluation. | `--num-prompts 500` |
+| Parameter               | Description                                                                                                                                                                                                 | Example              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | `--pressure` | Switch to enable performance pressure testing mode. Effective only when `--mode perf` is set. Enabled if this parameter is configured, disabled if not; disabled by default. For details on pressure testing, refer to 📚 [Enabling Steady-State Testing with Stress Testing](../../advanced_tutorials/stable_stage.md#enabling-steady-state-testing-with-stress-testing). | `--pressure`|
+| `--pressure-time`       | Duration of pressure testing. Only takes effect when `--pressure` mode is specified. Unit: seconds; default value: 15 seconds; value range: `[1, 86400]` (i.e., 1 second to 24 hours).                     | `--pressure-time 30` |
 
 
 ## Configuration Constant File Parameters

@@ -73,29 +73,45 @@ models = [
     )
 ]
 ```
-## Execute the Command
-After modifying the configuration files, execute the command to start the service-oriented accuracy evaluation (⚠️ It is recommended to add `--debug` for the first execution, which can print specific logs to the screen, making it easier to handle errors during the process of requesting the inference service):
+## Execute Command
+After modifying the configuration file, run the following command to start the service-oriented accuracy evaluation:
 ```bash
-# Add --debug to the command line
-ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt --debug
+ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt
 ```
-### View Task Execution Details
-After executing the AISBench command, the details of the task execution will be continuously saved to the default output path. This output path is indicated in the screen logs during runtime, for example:
+
+## View Task Execution Details
+After executing the AISBench command, the status of the running task will be displayed on a real-time refreshing dashboard in the command line (press the "P" key to pause refreshing for copying dashboard information, and press "P" again to resume refreshing). Example:
+```
+Base path of result&log : outputs/default/20250628_151326
+Task Progress Table (Updated at: 2025-11-06 10:08:21)
+Page: 1/1  Total 2 rows of data
+Press Up/Down arrow to page,  'P' to PAUSE/RESUME screen refresh, 'Ctrl + C' to exit
+
++----------------------------------+-----------+-------------------------------------------------+-------------+-------------+-------------------------------------------------+------------------------------------------------+
+| Task Name                        |   Process | Progress                                        | Time Cost   | Status      | Log Path                                        | Extend Parameters                              |
++==================================+===========+=================================================+=============+=============+=================================================+================================================+
+| vllm-api-general-chat/demo_gsm8k |    547141 | [###############               ] 4/8 [0.5 it/s] | 0:00:11     | inferencing | logs/infer/vllm-api-general-chat/demo_gsm8k.out | {'POST': 5, 'RECV': 4, 'FINISH': 4, 'FAIL': 0} |
++----------------------------------+-----------+-------------------------------------------------+-------------+-------------+-------------------------------------------------+------------------------------------------------+
+```
+
+Detailed logs of task execution are continuously written to the default output path, which is displayed on the real-time refreshing dashboard as `Log Path`. The `Log Path` (`logs/infer/vllm-api-general-chat/demo_gsm8k.out`) is located under the `Base path` (`outputs/default/20250628_151326`). Using the dashboard information above as an example, the path to the detailed task execution log is:
 ```shell
-06/28 15:13:26 - AISBench - INFO - Current exp folder: outputs/default/20250628_151326
+# {Base path}/{Log Path}
+outputs/default/20250628_151326/logs/infer/vllm-api-general-chat/demo_gsm8k.out
 ```
 
-This log indicates that the details of the task execution are saved in `outputs/default/20250628_151326` under the path where the command is executed.
-After the command execution is completed, the details of the task execution in `outputs/default/20250628_151326` are as follows:
+> 💡 To print detailed logs directly during execution, add the `--debug` parameter to the command:
+`ais_bench --models vllm_api_general_chat --datasets demo_gsm8k_gen_4_shot_cot_chat_prompt --debug`
 
+The `Base path` (`outputs/default/20250628_151326`) contains all task execution details. After the command completes, the full execution details are structured as follows:
 ```shell
 20250628_151326/
-├── configs # A combined configuration file of the model task, dataset task, and result presentation task
+├── configs # Combined configuration file for model tasks, dataset tasks, and structure presentation tasks
 │   └── 20250628_151326_29317.py
-├── logs # Logs during execution. If --debug is added to the command, no process logs will be saved to disk (all will be printed directly)
+├── logs # Execution logs (no process logs will be written to disk if --debug is added to the command; all logs are printed directly)
 │   ├── eval
 │   │   └── vllm-api-general-chat
-│   │       └── demo_gsm8k.out # Logs of the accuracy evaluation process based on the inference results in the predictions/ folder
+│   │       └── demo_gsm8k.out # Logs of the accuracy evaluation process based on inference results in the predictions/ folder
 │   └── infer
 │       └── vllm-api-general-chat
 │           └── demo_gsm8k.out # Inference process logs
@@ -104,16 +120,17 @@ After the command execution is completed, the details of the task execution in `
 │       └── demo_gsm8k.json # Inference results (all outputs returned by the inference service)
 ├── results
 │   └── vllm-api-general-chat
-│       └── demo_gsm8k.json # Raw scores calculated by the accuracy evaluation
+│       └── demo_gsm8k.json # Raw scores calculated from accuracy evaluation
 └── summary
-    ├── summary_20250628_151326.csv # Final accuracy scores presented in table format
-    ├── summary_20250628_151326.md # Final accuracy scores presented in markdown format
-    └── summary_20250628_151326.txt # Final accuracy scores presented in text format
+    ├── summary_20250628_151326.csv # Final accuracy scores (table format)
+    ├── summary_20250628_151326.md # Final accuracy scores (Markdown format)
+    └── summary_20250628_151326.txt # Final accuracy scores (text format)
 ```
-> ⚠️ **Note**: The content of the saved task execution details varies across different evaluation scenarios. Please refer to the guide for specific evaluation scenarios for details.
+
+> ⚠️ **Note**: The content of task execution details written to disk varies across different evaluation scenarios. Please refer to the guide for the specific evaluation scenario.
 
 ### Output Results
-Since there are only 8 pieces of data, the results will be generated quickly. An example of the result display is as follows:
+Since there are only 8 data samples, the results will be generated quickly. Example output:
 ```bash
 dataset                 version  metric   mode  vllm_api_general_chat
 ----------------------- -------- -------- ----- ----------------------
