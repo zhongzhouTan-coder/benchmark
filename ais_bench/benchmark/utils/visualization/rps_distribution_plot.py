@@ -1346,10 +1346,32 @@ def _export_to_html(fig: go.Figure, output_path: str, save_json: bool = True) ->
         logger.error(f"Unexpected error when saving HTML file: {e}")
 
 
+def _convert_numpy_to_list(obj):
+    """Recursively convert numpy arrays and scalars to Python native types.
+    
+    Args:
+        obj: Object that may contain numpy arrays
+        
+    Returns:
+        Object with all numpy arrays converted to lists
+    """
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.integer, np.floating)):
+        return obj.item()
+    elif isinstance(obj, dict):
+        return {key: _convert_numpy_to_list(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_convert_numpy_to_list(item) for item in obj]
+    else:
+        return obj
+
+
 def _export_to_json(fig: go.Figure, filename: str) -> None:
     """Serialize figure representation to JSON file"""
     try:
         fig_dict = fig.to_dict()
+        fig_dict = _convert_numpy_to_list(fig_dict)
         with open(filename, 'w') as f:
             json.dump(fig_dict, f, indent=2)
     except Exception as e:
