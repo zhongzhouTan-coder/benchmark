@@ -202,7 +202,7 @@ def first_number_postprocess(text: str) -> float:
 
 @TEXT_POSTPROCESSORS.register_module('multiple-select')
 def multiple_select_postprocess(text: str) -> str:
-    # Extracts all unique uppercase letters. sort them alphabetically, and joins them.
+    # Extracts all unique uppercase letters, sorts them alphabetically, and joins them.
     # For example, 'Select A and B' will yield 'AB'.
     ret = set([t for t in text if t.isupper()])
     result = ''.join(sorted(ret))
