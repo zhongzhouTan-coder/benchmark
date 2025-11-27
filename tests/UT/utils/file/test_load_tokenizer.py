@@ -96,7 +96,7 @@ class TestLoadTokenizer(unittest.TestCase):
         mock_auto_tokenizer.from_pretrained.side_effect = Exception(error_msg)
 
         with self.assertRaises(FileOperationError) as cm:
-                load_tokenizer(self.tokenizer_path)
+            load_tokenizer(self.tokenizer_path)
 
         self.assertEqual(cm.exception.error_code_str, UTILS_CODES.TOKENIZER_LOAD_FAILED.full_code)
         self.assertIn("Exception", str(cm.exception))
