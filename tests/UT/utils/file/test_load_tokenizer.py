@@ -82,7 +82,6 @@ class TestLoadTokenizer(unittest.TestCase):
         error_msg = "Permission denied"
         mock_auto_tokenizer.from_pretrained.side_effect = OSError(error_msg)
 
-
         with self.assertRaises(FileOperationError) as cm:
             load_tokenizer(self.tokenizer_path)
 
