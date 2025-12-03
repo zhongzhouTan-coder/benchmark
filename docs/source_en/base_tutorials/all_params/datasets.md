@@ -67,7 +67,7 @@ Open-source datasets refer to widely used, publicly accessible datasets in the c
 | DocVQA       | Multimodal Understanding (Image + Text) | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/docvqa/README.md)        |
 | MMStar       | Multimodal Understanding (Image + Text) | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/mmstar/README.md)        |
 | OcrBench-v2  | Multimodal Understanding (Image + Text) | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/ocrbench_v2/README.md)   |
-| Video-MME    | Multimodal Understanding (video + Text) | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/videomme/README.md)      |
+| Video-MME    | Multimodal Understanding (Video + Text) | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/videomme/README.md)      |
 
 
 ### Multi-Turn Dialogue Datasets
