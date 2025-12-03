@@ -29,6 +29,7 @@ AISBench Benchmark当前支持的数据集类型如下：
 | ifeval          | 编程（函数生成）         | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/ifeval/README.md)          |
 | lambada         | 长文本完形填空           | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/lambada/README.md)         |
 | lcsts           | 中文文本摘要             | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/lcsts/README.md)           |
+| leval           | 长上下文理解             | [详细介绍](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/leval/README.md)           |
 | livecodebench   | 编程（实时代码）         | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/livecodebench/README.md)   |
 | longbench       | 长序列                   | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/longbench/README.md)       |
 | longbenchv2     | 长序列                   | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/longbenchv2/README.md)     |
@@ -50,7 +51,7 @@ AISBench Benchmark当前支持的数据集类型如下：
 | FewCLUE_csl     | 关键词识别               | [详细介绍](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/FewCLUE_csl/README.md)     |
 | FewCLUE_eprstmt | 情感分析                 | [详细介绍](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/FewCLUE_eprstmt/README.md) |
 | FewCLUE_tnews   | 新闻分类                 | [详细介绍](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/FewCLUE_tnews/README.md)   |
-| Leval           | 长上下文理解             | [详细介绍](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/leval/README.md)           |
+|                 |
 
 ### 多模态类数据集
 | 数据集名称   | 分类                  | 详细介绍&获取方式                                                                                                         |

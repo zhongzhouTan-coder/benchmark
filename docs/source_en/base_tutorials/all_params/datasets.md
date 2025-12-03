@@ -31,6 +31,7 @@ Open-source datasets refer to widely used, publicly accessible datasets in the c
 | ifeval          | Programming (Function Generation)                      | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/ifeval/README_en.md)          |
 | lambada         | Long Text Cloze                                        | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/lambada/README_en.md)         |
 | lcsts           | Chinese Text Summarization                             | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/lcsts/README_en.md)           |
+| leval           | Long Context Understanding                             | [Detailed Introduction](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/leval/README_en.md)           |
 | livecodebench   | Programming (Real-Time Code)                           | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/livecodebench/README_en.md)   |
 | longbench       | Long Sequences                                         | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/longbench/README_en.md)       |
 | longbenchv2     | Long Sequences                                         | [Detailed Introduction](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/longbenchv2/README_en.md)     |
@@ -52,7 +53,6 @@ Open-source datasets refer to widely used, publicly accessible datasets in the c
 | FewCLUE_csl     | Keyword Recognition                                    | [Detailed Introduction](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/FewCLUE_csl/README_en.md)     |
 | FewCLUE_eprstmt | Sentiment Analysis                                     | [Detailed Introduction](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/FewCLUE_eprstmt/README_en.md) |
 | FewCLUE_tnews   | News Classification                                    | [Detailed Introduction](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/FewCLUE_tnews/README_en.md)   |
-| Leval           | Long Context Understanding                             | [Detailed Introduction](https://github.com/AISBench/benchmark/blob/master/ais_bench/benchmark/configs/datasets/leval/README_en.md)           |
 
 ### Multimodal Datasets
 | Dataset Name | Category                                | Detailed Introduction & Acquisition Method                                                                                              |
