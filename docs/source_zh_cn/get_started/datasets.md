@@ -1,12 +1,17 @@
 # 数据集准备指南
+
 ## 支持数据集类型
+
 AISBench Benchmark当前支持的数据集类型如下：
+
 1. [开源数据集](#开源数据集)，涵盖通用语言理解（如 ARC、SuperGLUE_BoolQ、MMLU）、数学推理（如 GSM8K、AIME2024、Math）、代码生成（如 HumanEval、MBPP、LiveCodeBench）、文本摘要（如 XSum、LCSTS）以及多模态任务（如 TextVQA、VideoBench、VocalSound）等多个方向，满足对语言模型在多任务、多模态、多语言等能力的全面评估需求。
 2. [随机合成数据集](#随机合成数据集)，支持指定输入输出序列长度和请求数目，适用于对于序列分布场景和数据规模存在要求的性能测试场景。
 3. [自定义数据集](#自定义数据集)，支持将用户自定义的数据内容转换成固定格式的数据进行测评，适用于定制化精度和性能测试场景。
 
 ## 开源数据集
+
 开源数据集指的是社区广泛使用、公开可获取的数据集。它们通常用于模型训练、验证和比较不同算法的效果。AISBench Benchmark支持多个主流开源数据集，便于用户快速进行标准化测试，详细介绍和获取方式如下：
+
 ### LLM类数据集
 | 数据集名称| 分类 | 详细介绍&获取方式 |
 |---------------|----------------------|-------------------|
@@ -69,15 +74,22 @@ AISBench Benchmark当前支持的数据集类型如下：
 | OCRBench_v2    | 多模态理解（图+文，OCR评估） | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/ocrbench_v2/README.md) |
 | RealWorldQA       | 多模态理解（图+文）      | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/realworldqa/README.md) |
 | MathVision       | 多模态理解（图+文）      | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/mathvision/README.md) |
+| RefCOCO      | 视觉定位（图+文）            | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/refcoco/README.md)      |
+| RefCOCO+     | 视觉定位（图+文）            | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/refcoco_plus/README.md) |
+| RefCOCOg     | 视觉定位（图+文）            | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/refcocog/README.md)     |
+
 
 ### 多轮对话类数据集
+
 | 数据集名称 | 分类     | 详细介绍&获取方式                                                                                                     |
 | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
 | sharegpt   | 多轮对话 | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/sharegpt/README.md) |
 | mtbench    | 多轮对话 | [详细介绍](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets/mtbench/README.md)  |
 
- **提示：** 用户可以将获取的数据集文件夹统一放置在`ais_bench/datasets/`目录下，AISBench Benchmark 会根据数据集配置文件自动检索改目录下的数据集文件进行测试
+**提示：** 用户可以将获取的数据集文件夹统一放置在`ais_bench/datasets/`目录下，AISBench Benchmark 会根据数据集配置文件自动检索改目录下的数据集文件进行测试
+
 ### 配置开源数据集
+
 AISBench Benchmark 开源数据集配置按照数据集名称保存在 [`configs/datasets`](https://github.com/AISBench/benchmark/tree/master/ais_bench/benchmark/configs/datasets) 目录下，在各个数据集对应的文件夹下存在多个数据集配置，文件结构如下所示：
 
 ```text
@@ -99,10 +111,13 @@ ais_bench/benchmark/configs/datasets
 ├── winogrande
 └── Xsum
 ```
+
 开源数据集配置名称由以下命名方式构成 `{数据集名称}_{评测方式}_{shot数目}_shot_{逻辑链规则}_{请求类型}_{任务类别}.py`，以 `gsm8k/gsm8k_gen_0_shot_cot_chat_prompt.py` 为例，该配置文件则为`gsm8k` 的数据集，对应的评测方式为 `gen`，即生成式评测（目前只支持生成式测评），shot提示的样本数为0，逻辑链规则为`cot`表明请求中包含逻辑链提示，不指定表明没有逻辑链提示，`chat_prompt`表明请求类型为对话，任务类别没有指定，默认为精度测试；同样的， `gsm8k_gen_0_shot_cot_str_perf.py` 指定请求类型为`str`字符串，请求类型`perf`表示模板用于性能测评任务。
+
 > 💡 **提示:** 指定数据集配置名称时，可以不包含 `.py` 后缀
 
 开源数据集的配置参数同样基于Python语法描述，以gsm8k为例，参数内容如下：
+
 ```python
 gsm8k_datasets = [
     dict(
@@ -128,4 +143,5 @@ ais_bench --models vllm_api_stream_chat --datasets synthetic_gen
 ```
 
 ## 自定义数据集
+
 AISBench Benchmark 支持用户接入自定义数据集，满足特定业务需求。用户可将私有数据整理为标准格式，通过内置接口无缝集成至评估流程中。详见：📚 [自定义数据集使用指南](../advanced_tutorials/custom_dataset.md)
