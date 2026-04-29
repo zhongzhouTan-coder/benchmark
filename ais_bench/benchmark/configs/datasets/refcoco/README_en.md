@@ -108,11 +108,7 @@ refcoco_eval_cfg = dict(
         type=BBoxIoUEvaluator,
         iou_threshold=0.5,
         coord_scale=1000.0,
-        smart_resize_cfg=dict(
-            factor=32,
-            min_pixels=65536,
-            max_pixels=16 * 16 * 4 * 16384,
-        ),
+        smart_resize_cfg=None,
     ),
     pred_postprocessor=dict(type=refcoco_bbox_postprocess),
 )
@@ -125,7 +121,7 @@ refcoco_eval_cfg = dict(
 - `split='val'`: this dataset entry loads parquet shards matching `val-*.parquet`.
 - `iou_threshold=0.5`: a prediction is counted as correct only when the Intersection over Union (IoU) between the predicted box and the reference box is at least `0.5`.
 - `coord_scale=1000.0`: in the current example config, model outputs are interpreted on a `0-1000` normalized bounding box scale. This is a model-specific parameter; the current value is mainly used to align with the 2D grounding coordinate convention described in the Qwen3-VL technical report, and should be changed if your model uses a different bounding box scale.
-- `smart_resize_cfg`: before receiving an image, the model applies a smart resize that matches the Qwen3-VL image preprocessor, scaling the image to satisfy the `factor`, `min_pixels`, and `max_pixels` constraints. The evaluator uses this config to map the model's bounding box output — which is expressed in resized-image coordinate space — back to the original image coordinate space before computing Intersection over Union (IoU) against the ground-truth box.
+- `smart_resize_cfg`: defaults to `None`, meaning no smart resize coordinate inverse-transform is applied. Set this to a dict with `factor`, `min_pixels`, and `max_pixels` only when the model (such as the Qwen3-VL / Qwen3.5 series) applies smart resize preprocessing before receiving an image and its bounding box outputs are expressed in the resized-image coordinate space. The evaluator uses this config to map the model's predicted box back to the original image coordinate space before computing Intersection over Union (IoU) against the ground-truth box.
 - `pred_postprocessor=refcoco_bbox_postprocess`: AISBench first extracts the first bounding box coordinate sequence from the model output text before evaluation.
 
 Base64 mode differs from the file-path config in two key places:

@@ -106,11 +106,7 @@ refcoco_eval_cfg = dict(
         type=BBoxIoUEvaluator,
         iou_threshold=0.5,
         coord_scale=1000.0,
-        smart_resize_cfg=dict(
-            factor=32,
-            min_pixels=65536,
-            max_pixels=16 * 16 * 4 * 16384,
-        ),
+        smart_resize_cfg=None,
     ),
     pred_postprocessor=dict(type=refcoco_bbox_postprocess),
 )
@@ -123,7 +119,7 @@ refcoco_eval_cfg = dict(
 - `split='val'`：表示当前数据集任务实际读取 `val-*.parquet` 分片。
 - `iou_threshold=0.5`：表示只有当预测框与标准框的交并比（IoU）不低于 `0.5` 时才计为正确。
 - `coord_scale=1000.0`：表示当前示例配置按 `0-1000` 归一化坐标解释模型输出。这是一个模型相关参数，当前设置主要用于适配 Qwen3-VL 技术报告中的 2D grounding 坐标约定；如果模型使用其他目标框表达方式，应相应调整该值。
-- `smart_resize_cfg`：模型在接收图像前会执行与 Qwen3-VL 图像预处理器一致的 smart resize 操作，将图像缩放到满足 `factor`、`min_pixels`、`max_pixels` 约束的尺寸。评估器需要知道这个缩放参数，才能将模型在缩放后图像坐标系下输出的目标框坐标反变换回原始图像坐标系，再与标注框计算交并比（IoU）。
+- `smart_resize_cfg`：默认值为 `None`，表示不启用 smart resize 坐标反变换。仅当模型（如 Qwen3-VL / Qwen3.5 系列）在接收图像前执行了 smart resize 预处理，且输出坐标基于缩放后图像坐标系时，才需要将此参数设置为包含 `factor`、`min_pixels`、`max_pixels` 的字典。评估器会利用该配置将模型输出的目标框坐标反变换回原始图像坐标系，再与标注框计算交并比（IoU）。
 - `pred_postprocessor=refcoco_bbox_postprocess`：表示先从模型输出文本中提取第一组目标框坐标，再交给评估器计算指标。
 
 base64 模式与上述配置的主要区别有两点：
