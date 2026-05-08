@@ -40,6 +40,7 @@ RefCOCOplus/
 ```
 
 - 使用默认文件路径配置时，首次运行测评会自动在 `data/temp_save_images/<split>/` 下生成 JPEG 缓存图片，无需手动创建该目录。
+- 使用文件路径图像模式时，缓存图片存储于 `{tool_root_path}/ais_bench/datasets/RefCOCOplus/data/temp_save_images/`。需确保推理服务能够访问该路径下的本地文件。以 vLLM 为例，启动服务时需添加参数 `--allowed-local-media-path {tool_root_path}/ais_bench/datasets/RefCOCOplus/data`。
 
 ## 可用数据集任务
 

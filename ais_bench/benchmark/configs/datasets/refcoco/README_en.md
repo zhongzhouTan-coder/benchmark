@@ -47,6 +47,7 @@ RefCOCO/
 ```
 
 - When using the default file-path config, the loader will automatically create JPEG caches under `data/temp_save_images/<split>/` on the first evaluation run. You do not need to create that directory in advance.
+- When using file-path image mode, the cached images are stored under `{tool_root_path}/ais_bench/datasets/RefCOCO/data/temp_save_images/`. Ensure your inference server can read local files from that path. For vLLM, pass `--allowed-local-media-path {tool_root_path}/ais_bench/datasets/RefCOCO/data` when starting the server.
 
 ## Available Dataset Tasks
 
