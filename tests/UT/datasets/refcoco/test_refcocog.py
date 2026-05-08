@@ -11,22 +11,28 @@ class TestRefCOCOgDataset(unittest.TestCase):
         # given
         sentinel_dataset = object()
 
-        with patch.object(RefCOCODataset, 'load', return_value=sentinel_dataset) as mock_load:
+        with patch.object(
+            RefCOCODataset, "load", return_value=sentinel_dataset
+        ) as mock_load:
             # when
-            result = RefCOCOgDataset.load('/dataset/root', 'test', local_mode=False, image_type='image_base64')
+            result = RefCOCOgDataset.load(
+                "/dataset/root", "test", local_mode=False, image_type="base64"
+            )
 
         # then
         self.assertIs(result, sentinel_dataset)
-        mock_load.assert_called_once_with('/dataset/root', 'test', local_mode=False, image_type='image_base64')
+        mock_load.assert_called_once_with(
+            "/dataset/root", "test", local_mode=False, image_type="base64"
+        )
 
     def test_should_register_refcocog_dataset_when_module_is_imported(self):
         # given / when
-        registered_dataset = LOAD_DATASET.get('RefCOCOgDataset')
+        registered_dataset = LOAD_DATASET.get("RefCOCOgDataset")
 
         # then
         self.assertIs(registered_dataset, RefCOCOgDataset)
         self.assertTrue(issubclass(RefCOCOgDataset, RefCOCODataset))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
