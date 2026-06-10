@@ -4,6 +4,7 @@ import re
 import copy
 import string
 import ast
+import base64
 from pathlib import Path
 from os import environ
 import pandas as pd
@@ -15,11 +16,14 @@ from ais_bench.benchmark.openicl import BaseEvaluator
 from ais_bench.benchmark.registry import LOAD_DATASET, TEXT_POSTPROCESSORS
 from ais_bench.benchmark.utils.logging import AISLogger
 from ais_bench.benchmark.datasets.utils.datasets import get_data_path, toliststr, decode_base64_to_image_file, get_content_str
+from ais_bench.benchmark.utils.image_process import pil_to_base64
 
 from .base import BaseDataset
 
 logger = AISLogger()
 IMAGE_MAP_LEN = 64
+IMAGE_PATH_TYPE = 'path'
+IMAGE_BASE64_TYPE = 'base64'
 
 MMMU_SUBSET_LIST = [
     'Accounting',
@@ -380,27 +384,76 @@ def _dump_mmmu_image(candidate, record, image_index, image_root_path, data_root)
     return None
 
 
-def _collect_mmmu_images(record, image_root_path, data_root):
+def _encode_mmmu_file_to_base64(image_path):
+    with open(image_path, 'rb') as file:
+        return base64.b64encode(file.read()).decode('utf-8')
+
+
+def _encode_mmmu_bytes_to_base64(image_bytes):
+    if isinstance(image_bytes, list):
+        image_bytes = bytes(image_bytes)
+    return base64.b64encode(image_bytes).decode('utf-8')
+
+
+def _encode_mmmu_image(candidate, image_root_path, data_root):
+    if candidate is None:
+        return None
+    if isinstance(candidate, float) and pd.isna(candidate):
+        return None
+    if isinstance(candidate, dict):
+        path = _resolve_mmmu_existing_image_path(candidate.get('path'), data_root, image_root_path)
+        if path:
+            return _encode_mmmu_file_to_base64(path)
+        bytes_data = candidate.get('bytes')
+        if bytes_data:
+            return _encode_mmmu_bytes_to_base64(bytes_data)
+    if isinstance(candidate, (bytes, bytearray)) or (
+        isinstance(candidate, list) and all(isinstance(item, int) for item in candidate)
+    ):
+        return _encode_mmmu_bytes_to_base64(candidate)
+    if hasattr(candidate, 'save'):
+        image = candidate.convert('RGB') if hasattr(candidate, 'convert') else candidate
+        return pil_to_base64(image, format='JPEG')
+    if isinstance(candidate, str):
+        path = _resolve_mmmu_existing_image_path(candidate, data_root, image_root_path)
+        if path:
+            return _encode_mmmu_file_to_base64(path)
+        return candidate.strip() or None
+    return None
+
+
+def _resolve_mmmu_image(candidate, record, image_index, image_root_path, data_root, image_type):
+    if image_type == IMAGE_PATH_TYPE:
+        return _dump_mmmu_image(candidate, record, image_index, image_root_path, data_root)
+    if image_type == IMAGE_BASE64_TYPE:
+        return _encode_mmmu_image(candidate, image_root_path, data_root)
+    raise ValueError(
+        f"Unsupported image_type: {image_type}. Expected one of "
+        f"{[IMAGE_PATH_TYPE, IMAGE_BASE64_TYPE]}"
+    )
+
+
+def _collect_mmmu_images(record, image_root_path, data_root, image_type=IMAGE_PATH_TYPE):
     image_map = {}
     for image_index in range(1, 8):
         image = record.get(f'image_{image_index}')
-        image_path = _dump_mmmu_image(image, record, image_index, image_root_path, data_root)
-        if image_path:
-            image_map[image_index] = image_path
+        image_value = _resolve_mmmu_image(image, record, image_index, image_root_path, data_root, image_type)
+        if image_value:
+            image_map[image_index] = image_value
 
     if not image_map:
         candidates = _safe_list(record.get('image'))
         for image_index, image in enumerate(candidates, start=1):
-            image_path = _dump_mmmu_image(image, record, image_index, image_root_path, data_root)
-            if image_path:
-                image_map[image_index] = image_path
+            image_value = _resolve_mmmu_image(image, record, image_index, image_root_path, data_root, image_type)
+            if image_value:
+                image_map[image_index] = image_value
 
     if not image_map:
         candidates = _safe_list(record.get('image_path'))
         for image_index, image in enumerate(candidates, start=1):
-            image_path = _dump_mmmu_image(image, record, image_index, image_root_path, data_root)
-            if image_path:
-                image_map[image_index] = image_path
+            image_value = _resolve_mmmu_image(image, record, image_index, image_root_path, data_root, image_type)
+            if image_value:
+                image_map[image_index] = image_value
     return image_map
 
 
@@ -470,7 +523,13 @@ class MMMUDataset(BaseDataset):
              open_prompt=None,
              start_text_prompt='',
              end_text_prompt='',
-             option_prompt=''):
+             option_prompt='',
+             image_type=IMAGE_PATH_TYPE):
+        if image_type not in (IMAGE_PATH_TYPE, IMAGE_BASE64_TYPE):
+            raise ValueError(
+                f"Unsupported image_type: {image_type}. Expected one of "
+                f"{[IMAGE_PATH_TYPE, IMAGE_BASE64_TYPE]}"
+            )
         records, resolved_path, is_local = _load_mmmu_records(
             path, split=split, subset_list=subset_list
         )
@@ -480,7 +539,10 @@ class MMMUDataset(BaseDataset):
             base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..', 'datasets'))
         image_root_path = os.path.join(base_dir, 'MMMU_images')
         os.makedirs(image_root_path, exist_ok=True)
-        logger.info(f'Preparing MMMU images under {image_root_path}')
+        if image_type == IMAGE_BASE64_TYPE:
+            logger.info('Encoding MMMU images as base64')
+        else:
+            logger.info(f'Preparing MMMU images under {image_root_path}')
         data_root = resolved_path if is_local and os.path.isdir(resolved_path) else os.path.dirname(resolved_path) if is_local else None
 
         dataset = []
@@ -530,7 +592,7 @@ class MMMUDataset(BaseDataset):
                     'l2-category': record.get('l2-category', record.get('subfield')),
                 }
 
-            image_map = _collect_mmmu_images(record, image_root_path, data_root)
+            image_map = _collect_mmmu_images(record, image_root_path, data_root, image_type=image_type)
             msgs = _parse_mmmu_text_with_images(prompt, image_map)
             content = get_content_str(msgs)
             first_image = image_map[min(image_map)] if image_map else ''

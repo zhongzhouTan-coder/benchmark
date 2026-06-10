@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import string
@@ -26,6 +27,8 @@ from ais_bench.benchmark.datasets.mmmu import (
     _write_mmmu_image_bytes,
     _build_mmmu_image_path,
     _dump_mmmu_image,
+    _encode_mmmu_file_to_base64,
+    _encode_mmmu_image,
     _collect_mmmu_images,
     _parse_mmmu_text_with_images,
     _parse_mmmu_choice_prediction,
@@ -37,6 +40,8 @@ from ais_bench.benchmark.datasets.mmmu import (
     MMMUDataset,
     MMMUEvaluator,
     IMAGE_MAP_LEN,
+    IMAGE_PATH_TYPE,
+    IMAGE_BASE64_TYPE,
     MMMU_SUBSET_LIST,
     MMMU_MULTI_CHOICE_TYPE,
     MMMU_OPEN_TYPE,
@@ -60,6 +65,10 @@ class TestConstants(unittest.TestCase):
 
     def test_mmmu_open_type(self):
         self.assertEqual(MMMU_OPEN_TYPE, 'open')
+
+    def test_image_type_constants(self):
+        self.assertEqual(IMAGE_PATH_TYPE, 'path')
+        self.assertEqual(IMAGE_BASE64_TYPE, 'base64')
 
 
 class TestSafeList(unittest.TestCase):
@@ -455,6 +464,39 @@ class TestDumpMmmuImage(unittest.TestCase):
             self.assertIsNone(result)
 
 
+class TestEncodeMmmuImage(unittest.TestCase):
+    def test_encode_file_to_base64(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = os.path.join(tmpdir, 'img.bin')
+            with open(image_path, 'wb') as file:
+                file.write(b'image-bytes')
+            result = _encode_mmmu_file_to_base64(image_path)
+            self.assertEqual(result, base64.b64encode(b'image-bytes').decode('utf-8'))
+
+    def test_bytes_candidate(self):
+        result = _encode_mmmu_image(b'image-bytes', '/tmp', None)
+        self.assertEqual(result, base64.b64encode(b'image-bytes').decode('utf-8'))
+
+    def test_list_bytes_candidate(self):
+        result = _encode_mmmu_image([105, 109, 103], '/tmp', None)
+        self.assertEqual(result, base64.b64encode(b'img').decode('utf-8'))
+
+    def test_existing_path_candidate(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = os.path.join(tmpdir, 'img.bin')
+            with open(image_path, 'wb') as file:
+                file.write(b'image-bytes')
+            result = _encode_mmmu_image('img.bin', tmpdir, tmpdir)
+            self.assertEqual(result, base64.b64encode(b'image-bytes').decode('utf-8'))
+
+    def test_base64_string_passthrough(self):
+        self.assertEqual(_encode_mmmu_image('base64data', '/tmp', None), 'base64data')
+
+    def test_dict_bytes_candidate(self):
+        result = _encode_mmmu_image({'bytes': b'image-bytes'}, '/tmp', None)
+        self.assertEqual(result, base64.b64encode(b'image-bytes').decode('utf-8'))
+
+
 class TestCollectMmmuImages(unittest.TestCase):
     @patch('ais_bench.benchmark.datasets.mmmu._dump_mmmu_image')
     def test_image_fields(self, mock_dump):
@@ -496,6 +538,12 @@ class TestCollectMmmuImages(unittest.TestCase):
         result = _collect_mmmu_images(record, '/tmp', None)
         self.assertIn(3, result)
         self.assertEqual(len(result), 1)
+
+    def test_base64_image_type(self):
+        expected = base64.b64encode(b'image-bytes').decode('utf-8')
+        record = {'image_1': b'image-bytes'}
+        result = _collect_mmmu_images(record, '/tmp', None, image_type=IMAGE_BASE64_TYPE)
+        self.assertEqual(result, {1: expected})
 
 
 class TestParseMmmuTextWithImages(unittest.TestCase):
