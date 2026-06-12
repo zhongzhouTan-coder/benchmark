@@ -1,5 +1,6 @@
 import subprocess
-from typing import Callable, Iterable, TypeVar
+import uuid
+from typing import Callable, Iterable, Optional, Set, TypeVar
 
 from ais_bench.benchmark.utils.logging import AISLogger
 from ais_bench.benchmark.utils.logging.error_codes import SWEB_CODES
@@ -14,34 +15,122 @@ DATASET_MAPPING = {
 }
 
 
-def cleanup_swebench_containers():
-    """Stop and remove Docker containers created by SWE-bench tasks.
+SWEBENCH_SESSION_LABEL = "ais_bench.swebench.session"
 
-    Cleans both:
-    - miniswe-agent inference containers (names start with 'minisweagent-')
-    - SWE-bench eval harness containers (names contain 'sweb.eval')
-    """
-    name_filters = ["minisweagent-", "sweb.eval"]
-    for name_filter in name_filters:
-        try:
-            r = subprocess.run(
-                ["docker", "ps", "-aq", "--filter", f"name={name_filter}"],
-                capture_output=True,
-                text=True,
-                timeout=10,
+
+def make_swebench_session_id() -> str:
+    return uuid.uuid4().hex
+
+
+def _merge_docker_labels(labels, session_id: str):
+    if isinstance(labels, dict):
+        labels = dict(labels)
+        labels[SWEBENCH_SESSION_LABEL] = session_id
+        return labels
+    if isinstance(labels, (list, tuple)):
+        labels = list(labels)
+        labels.append(f"{SWEBENCH_SESSION_LABEL}={session_id}")
+        return labels
+    return {SWEBENCH_SESSION_LABEL: session_id}
+
+
+class _DockerContainersWithSessionLabel:
+    def __init__(self, containers, session_id: str):
+        self._containers = containers
+        self._session_id = session_id
+
+    def create(self, *args, **kwargs):
+        kwargs["labels"] = _merge_docker_labels(
+            kwargs.get("labels"),
+            self._session_id,
+        )
+        return self._containers.create(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        kwargs["labels"] = _merge_docker_labels(
+            kwargs.get("labels"),
+            self._session_id,
+        )
+        return self._containers.run(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._containers, name)
+
+
+class _DockerClientWithSessionLabel:
+    def __init__(self, client, session_id: str):
+        self._client = client
+        self.containers = _DockerContainersWithSessionLabel(
+            client.containers,
+            session_id,
+        )
+
+    def __getattr__(self, name):
+        return getattr(self._client, name)
+
+
+def add_swebench_session_label_to_docker_client(client, session_id: str):
+    """Return a Docker client wrapper that labels containers it creates."""
+    return _DockerClientWithSessionLabel(client, session_id)
+
+
+def list_swebench_container_ids(session_id: Optional[str] = None) -> Set[str]:
+    """Return Docker container IDs tagged for one SWE-bench task session."""
+    if not session_id:
+        return set()
+
+    container_ids: Set[str] = set()
+    try:
+        r = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "-aq",
+                "--filter",
+                f"label={SWEBENCH_SESSION_LABEL}={session_id}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if r.returncode == 0:
+            container_ids.update(
+                x.strip() for x in r.stdout.strip().splitlines() if x.strip()
             )
-            if r.returncode != 0 or not (r.stdout or "").strip():
-                continue
-            ids = [x.strip() for x in r.stdout.strip().splitlines() if x.strip()]
-            if not ids:
-                continue
-            subprocess.run(
-                ["docker", "rm", "-f"] + ids,
-                capture_output=True,
-                timeout=30,
-            )
-        except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
-            pass
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+        pass
+    return container_ids
+
+
+def cleanup_swebench_containers(
+    *,
+    container_ids: Optional[Iterable[str]] = None,
+    session_id: Optional[str] = None,
+):
+    """Stop and remove containers created by the current SWE-bench task."""
+    targets = set(container_ids or [])
+    targets.update(list_swebench_container_ids(session_id))
+    targets = sorted(targets)
+    if not targets:
+        return
+    try:
+        subprocess.run(
+            ["docker", "rm", "-f"] + targets,
+            capture_output=True,
+            timeout=30,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+        pass
+
+
+def add_swebench_session_label_to_run_args(config: dict, session_id: str) -> None:
+    """Add this task's Docker label to mini-swe-agent Docker run args."""
+    environment = config.setdefault("environment", {})
+    run_args = list(environment.get("run_args", ["--rm"]))
+    label_flag = f"{SWEBENCH_SESSION_LABEL}={session_id}"
+    if label_flag not in run_args:
+        run_args.extend(["--label", label_flag])
+    environment["run_args"] = run_args
 
 
 def docker_image_exists_locally(image: str) -> bool:
