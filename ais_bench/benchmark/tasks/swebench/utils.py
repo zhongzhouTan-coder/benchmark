@@ -1,4 +1,3 @@
-import logging
 import subprocess
 import uuid
 from typing import Callable, Iterable, Optional, Set, TypeVar
@@ -7,7 +6,7 @@ from ais_bench.benchmark.utils.logging import AISLogger
 from ais_bench.benchmark.utils.logging.error_codes import SWEB_CODES
 from ais_bench.benchmark.utils.logging.exceptions import AISBenchRuntimeError
 
-_logger = logging.getLogger(__name__)
+_logger = AISLogger(name="swebench.utils")
 
 DATASET_MAPPING = {
     "full": "princeton-nlp/SWE-Bench",
@@ -25,16 +24,25 @@ def make_swebench_session_id() -> str:
     return uuid.uuid4().hex
 
 
-def _merge_docker_labels(labels, session_id: str):
+def _merge_docker_labels(labels, session_id: str) -> dict:
+    """Merge session label into Docker labels dict.
+
+    Docker SDK ``containers.create/run(labels=...)`` expects a mapping
+    (label key -> value).  Always returns a dict.
+    """
     if isinstance(labels, dict):
-        labels = dict(labels)
-        labels[SWEBENCH_SESSION_LABEL] = session_id
-        return labels
-    if isinstance(labels, (list, tuple)):
-        labels = list(labels)
-        labels.append(f"{SWEBENCH_SESSION_LABEL}={session_id}")
-        return labels
-    return {SWEBENCH_SESSION_LABEL: session_id}
+        merged = dict(labels)
+    elif isinstance(labels, (list, tuple)):
+        # Convert ``["k=v", ...]`` to dict
+        merged = {}
+        for item in labels:
+            if isinstance(item, str) and "=" in item:
+                k, v = item.split("=", 1)
+                merged[k] = v
+    else:
+        merged = {}
+    merged[SWEBENCH_SESSION_LABEL] = session_id
+    return merged
 
 
 class _DockerContainersWithSessionLabel:
