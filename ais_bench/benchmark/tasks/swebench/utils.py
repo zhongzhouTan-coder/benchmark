@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import uuid
 from typing import Callable, Iterable, Optional, Set, TypeVar
@@ -5,6 +6,8 @@ from typing import Callable, Iterable, Optional, Set, TypeVar
 from ais_bench.benchmark.utils.logging import AISLogger
 from ais_bench.benchmark.utils.logging.error_codes import SWEB_CODES
 from ais_bench.benchmark.utils.logging.exceptions import AISBenchRuntimeError
+
+_logger = logging.getLogger(__name__)
 
 DATASET_MAPPING = {
     "full": "princeton-nlp/SWE-Bench",
@@ -97,8 +100,12 @@ def list_swebench_container_ids(session_id: Optional[str] = None) -> Set[str]:
             container_ids.update(
                 x.strip() for x in r.stdout.strip().splitlines() if x.strip()
             )
-    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
-        pass
+    except subprocess.TimeoutExpired:
+        _logger.debug("Timed out listing containers for session %s", session_id)
+    except FileNotFoundError:
+        _logger.debug("Docker not available; cannot list containers")
+    except Exception:
+        _logger.debug("Unexpected error listing containers", exc_info=True)
     return container_ids
 
 
@@ -119,8 +126,12 @@ def cleanup_swebench_containers(
             capture_output=True,
             timeout=30,
         )
-    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
-        pass
+    except subprocess.TimeoutExpired:
+        _logger.warning("Timed out removing containers: %s", targets)
+    except FileNotFoundError:
+        _logger.debug("Docker not available; cannot remove containers")
+    except Exception:
+        _logger.warning("Unexpected error removing containers", exc_info=True)
 
 
 def add_swebench_session_label_to_run_args(config: dict, session_id: str) -> None:
@@ -186,5 +197,5 @@ def ensure_swebench_docker_images(
         raise AISBenchRuntimeError(
             SWEB_CODES.DOCKER_IMAGE_UNAVAILABLE,
             "Required SWE-bench Docker image(s) missing or pull failed; "
-            f"aborting {task_label}. Images: {failed}"
+            f"aborting {task_label}. Images: {failed}",
         )
