@@ -91,6 +91,47 @@ class TestBaseAPIModel(unittest.TestCase):
         model = self.model_class(**kwargs)
         self.assertEqual(model.base_url, "http://test-api.com/path/")
 
+    def test_init_with_url_path_prefix(self):
+        """Test that urljoin preserves the last path segment when URL has a custom prefix."""
+        import urllib.parse
+
+        # Simulate the issue: URL with path prefix (like /member1/deepseek_v4)
+        kwargs = self.default_kwargs.copy()
+        kwargs["url"] = "http://10.5.0.1:8080/member1/deepseek_v4"
+        model = self.model_class(**kwargs)
+        # urljoin should append endpoint to the full path, not drop deepseek_v4
+        full_url = urllib.parse.urljoin(model.base_url, "v1/chat/completions")
+        self.assertEqual(
+            full_url,
+            "http://10.5.0.1:8080/member1/deepseek_v4/v1/chat/completions",
+        )
+
+    def test_init_with_url_query_string(self):
+        """Test that query strings are preserved when appending trailing slash."""
+        kwargs = self.default_kwargs.copy()
+        kwargs["url"] = "http://host.com/path?x=1"
+        model = self.model_class(**kwargs)
+        self.assertEqual(model.base_url, "http://host.com/path/?x=1")
+
+    def test_init_with_url_fragment(self):
+        """Test that fragments are preserved when appending trailing slash."""
+        kwargs = self.default_kwargs.copy()
+        kwargs["url"] = "http://host.com/path#section"
+        model = self.model_class(**kwargs)
+        self.assertEqual(model.base_url, "http://host.com/path/#section")
+
+    def test_init_with_url_whitespace(self):
+        """Test that leading/trailing whitespace is stripped from URL."""
+        kwargs = self.default_kwargs.copy()
+        kwargs["url"] = "  https://test-api.com/v1  "
+        model = self.model_class(**kwargs)
+        self.assertEqual(model.base_url, "https://test-api.com/v1/")
+
+        # Empty/whitespace-only URL should fall through to host_ip:host_port
+        kwargs["url"] = "   "
+        model = self.model_class(**kwargs)
+        self.assertEqual(model.base_url, "http://127.0.0.1:8000/")
+
     def test_init_with_ssl(self):
         kwargs = self.default_kwargs.copy()
         kwargs["enable_ssl"] = True

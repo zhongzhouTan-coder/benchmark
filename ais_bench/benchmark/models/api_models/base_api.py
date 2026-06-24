@@ -1,5 +1,6 @@
 import sys
 import json
+import urllib.parse
 import warnings
 import asyncio
 import os.path as osp
@@ -118,17 +119,22 @@ class BaseAPIModel(BaseModel):
 
     def _get_base_url(self) -> str:
         protocol = "https" if self.enable_ssl else "http"
-        if self.url:
+        clean_url = self.url.strip() if isinstance(self.url, str) else ""
+        if clean_url:
             self.logger.info(
-                f"Using custom URL: [{self.url}], [host_ip: {self.host_ip}] and [host_port: {self.host_port}] will be ignored"
+                f"Using custom URL: [{clean_url}], [host_ip: {self.host_ip}] and [host_port: {self.host_port}] will be ignored"
             )
             # Check if URL already contains protocol
-            if self.url.startswith("http://") or self.url.startswith("https://"):
-                url = self.url
+            if clean_url.startswith("http://") or clean_url.startswith("https://"):
+                url = clean_url
             else:
-                url = f"{protocol}://{self.url}"
-            # Ensure trailing slash to avoid urljoin dropping the last path segment
-            return url if url.endswith("/") else url + "/"
+                url = f"{protocol}://{clean_url}"
+            # Ensure trailing slash on path to avoid urljoin dropping the last path segment.
+            # Use urlparse/urlunparse to safely handle URLs with query strings or fragments.
+            parsed = urllib.parse.urlparse(url)
+            if not parsed.path or parsed.path.endswith("/"):
+                return url
+            return urllib.parse.urlunparse(parsed._replace(path=parsed.path + "/"))
 
         # For IPv6 literals, wrap in brackets when constructing the URL.
         host = self.host_ip
