@@ -34,8 +34,7 @@ from ais_bench.benchmark.tasks.swebench_pro.utils import (
     merge_nested_dicts,
     build_problem_statement,
 )
-
-DEFAULT_LITELLM_TIMEOUT = 200
+from ais_bench.benchmark.tasks.swebench.utils import DEFAULT_LITELLM_TIMEOUT
 
 
 def _get_minisweagent_config(model_cfg: ConfigDict) -> dict:

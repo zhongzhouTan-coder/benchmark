@@ -28,13 +28,12 @@ from ais_bench.benchmark.utils.logging.exceptions import (
 )
 from ais_bench.benchmark.tasks.swebench.utils import (
     DATASET_MAPPING,
+    DEFAULT_LITELLM_TIMEOUT,
     add_swebench_session_label_to_run_args,
     cleanup_swebench_containers,
     ensure_swebench_docker_images,
     make_swebench_session_id,
 )
-
-DEFAULT_LITELLM_TIMEOUT = 200
 
 
 def _get_minisweagent_config(model_cfg: ConfigDict) -> dict:
