@@ -33,6 +33,7 @@ from ais_bench.benchmark.tasks.swebench_pro.utils import (
     get_dockerhub_image_uri,
     merge_nested_dicts,
     build_problem_statement,
+    sanitize_config_for_logging,
 )
 from ais_bench.benchmark.tasks.swebench.utils import DEFAULT_LITELLM_TIMEOUT
 
@@ -281,7 +282,7 @@ class SWEBenchProInferTask(BaseTask):
             base_config.setdefault("agent", {})["step_limit"] = dataset_cfg[
                 "step_limit"
             ]
-        self.logger.info(f"base_config '{base_config}'")
+        self.logger.info("base_config '%s'", sanitize_config_for_logging(base_config))
 
         progress_manager, live_render_group = _make_swebench_pro_progress_manager(
             task_state_manager, len(instances), out_dir
