@@ -29,11 +29,14 @@ class TestGetMinisweagentConfig(unittest.TestCase):
         self.assertIn("model_class", result["model"])
         self.assertIn("model_kwargs", result["model"])
 
-    def test_sets_default_timeout_200(self):
-        """Default timeout should be 200s (not LiteLLM default of 600s)."""
+    def test_sets_default_timeout(self):
+        """Default timeout should match DEFAULT_LITELLM_TIMEOUT (not LiteLLM default of 600s)."""
         cfg = {}
         result = self.infer_module._get_minisweagent_config(cfg)
-        self.assertEqual(result["model"]["model_kwargs"]["timeout"], 200)
+        self.assertEqual(
+            result["model"]["model_kwargs"]["timeout"],
+            self.infer_module.DEFAULT_LITELLM_TIMEOUT,
+        )
 
     def test_user_timeout_overrides_default(self):
         """User-specified timeout in generation_kwargs should override default of 200."""

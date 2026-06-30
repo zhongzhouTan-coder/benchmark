@@ -35,6 +35,8 @@ from ais_bench.benchmark.tasks.swebench_pro.utils import (
     build_problem_statement,
 )
 
+DEFAULT_LITELLM_TIMEOUT = 200
+
 
 def _get_minisweagent_config(model_cfg: ConfigDict) -> dict:
     model_name = model_cfg.get("model") or model_cfg.get("model_name") or ""
@@ -46,8 +48,8 @@ def _get_minisweagent_config(model_cfg: ConfigDict) -> dict:
     if isinstance(model_type, str):
         model_type = model_type.split(".")[-1]
     model_kwargs = dict(model_cfg.get("generation_kwargs", {}))
-    # Set default inference timeout to 200s (LiteLLM default is 600s, too long for SWE-bench)
-    model_kwargs.setdefault("timeout", 200)
+    # Set default inference timeout (LiteLLM default is 600s, too long for SWE-bench)
+    model_kwargs.setdefault("timeout", DEFAULT_LITELLM_TIMEOUT)
     if model_cfg.get("api_key"):
         model_kwargs["api_key"] = model_cfg["api_key"]
     if model_cfg.get("url"):
